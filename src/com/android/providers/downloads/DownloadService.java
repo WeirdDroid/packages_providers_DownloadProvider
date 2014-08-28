@@ -369,10 +369,6 @@ public class DownloadService extends Service {
                     PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_ONE_SHOT));
         }
 
-        if (!isActive) {
-            LiveFolderReceiver.updateFolders(this, 0);
-        }
-
         return isActive;
     }
 
@@ -418,7 +414,6 @@ public class DownloadService extends Service {
             deleteFileIfExists(info.mFileName);
         }
         mDownloads.remove(info.mId);
-        LiveFolderReceiver.updateFolders(this, 0);
     }
 
     private void deleteFileIfExists(String path) {
