@@ -177,10 +177,22 @@ public class DownloadNotifier {
                  }
             }
 
+            // Check paused status about these downloads. If exists, will
+            // update icon and content title/content text in notification.
+            boolean hasPausedStatus = false;
+            for (DownloadInfo info : cluster) {
+                if (isPausedStatus(info.mStatus)) {
+                    hasPausedStatus = true;
+                    break;
+                }
+            }
+
             // Show relevant icon
             if (type == TYPE_ACTIVE) {
-                if (hasErrorStatus) {
-                    builder.setSmallIcon(android.R.drawable.stat_sys_warning);
+                if (hasPausedStatus) {
+                    builder.setSmallIcon(R.drawable.download_pause);
+                } else if (hasErrorStatus) {
+                    builder.setSmallIcon(R.drawable.ic_stat_download_error);
                 } else {
                     builder.setSmallIcon(android.R.drawable.stat_sys_download);
                 }
@@ -610,8 +622,12 @@ public class DownloadNotifier {
                || Downloads.Impl.isStatusClientError(status)
                || Downloads.Impl.isStatusServerError(status)
                || status == Downloads.Impl.STATUS_INSUFFICIENT_SPACE_ERROR
-               || status == Downloads.Impl.STATUS_DEVICE_NOT_FOUND_ERROR
-               || status == Downloads.Impl.STATUS_WAITING_FOR_NETWORK;
+               || status == Downloads.Impl.STATUS_DEVICE_NOT_FOUND_ERROR;
         return isErrorStatus;
+    }
+
+    private static boolean isPausedStatus(int status) {
+        return status == Downloads.Impl.STATUS_WAITING_FOR_NETWORK ||
+                status == Downloads.Impl.STATUS_PAUSED_BY_MANUAL;
     }
 }
