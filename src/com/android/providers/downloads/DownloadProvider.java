@@ -1051,16 +1051,12 @@ public final class DownloadProvider extends ContentProvider {
             filteredValues = values;
             String filename = values.getAsString(Downloads.Impl._DATA);
             if (filename != null) {
-                Cursor c = null;
-                try {
-                    c = query(uri, new String[]
-                            { Downloads.Impl.COLUMN_TITLE }, null, null, null);
-                    if (!c.moveToFirst() || c.getString(0).isEmpty()) {
-                        values.put(Downloads.Impl.COLUMN_TITLE, new File(filename).getName());
-                    }
-                } finally {
-                    IoUtils.closeQuietly(c);
+                Cursor c = query(uri, new String[]
+                        { Downloads.Impl.COLUMN_TITLE }, null, null, null);
+                if (!c.moveToFirst() || c.getString(0).isEmpty()) {
+                    values.put(Downloads.Impl.COLUMN_TITLE, new File(filename).getName());
                 }
+                c.close();
             }
 
             Integer status = values.getAsInteger(Downloads.Impl.COLUMN_STATUS);
@@ -1279,35 +1275,29 @@ public final class DownloadProvider extends ContentProvider {
         if (cursor == null) {
             Log.v(Constants.TAG, "null cursor in openFile");
         } else {
-            try {
-                if (!cursor.moveToFirst()) {
-                    Log.v(Constants.TAG, "empty cursor in openFile");
-                } else {
-                    do {
-                        Log.v(Constants.TAG, "row " + cursor.getInt(0) + " available");
-                    } while(cursor.moveToNext());
-                }
-            } finally {
-                cursor.close();
+            if (!cursor.moveToFirst()) {
+                Log.v(Constants.TAG, "empty cursor in openFile");
+            } else {
+                do {
+                    Log.v(Constants.TAG, "row " + cursor.getInt(0) + " available");
+                } while(cursor.moveToNext());
             }
+            cursor.close();
         }
         cursor = query(uri, new String[] { "_data" }, null, null, null);
         if (cursor == null) {
             Log.v(Constants.TAG, "null cursor in openFile");
         } else {
-            try {
-                if (!cursor.moveToFirst()) {
-                    Log.v(Constants.TAG, "empty cursor in openFile");
-                } else {
-                    String filename = cursor.getString(0);
-                    Log.v(Constants.TAG, "filename in openFile: " + filename);
-                    if (new java.io.File(filename).isFile()) {
-                        Log.v(Constants.TAG, "file exists in openFile");
-                    }
+            if (!cursor.moveToFirst()) {
+                Log.v(Constants.TAG, "empty cursor in openFile");
+            } else {
+                String filename = cursor.getString(0);
+                Log.v(Constants.TAG, "filename in openFile: " + filename);
+                if (new java.io.File(filename).isFile()) {
+                    Log.v(Constants.TAG, "file exists in openFile");
                 }
-            } finally {
-                cursor.close();
             }
+            cursor.close();
         }
     }
 
