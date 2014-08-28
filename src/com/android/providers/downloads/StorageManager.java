@@ -19,7 +19,6 @@ package com.android.providers.downloads;
 import static com.android.providers.downloads.Constants.LOGV;
 import static com.android.providers.downloads.Constants.TAG;
 
-import android.app.Activity;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.res.Resources;
@@ -28,7 +27,6 @@ import android.database.sqlite.SQLiteException;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.StatFs;
-import android.os.storage.StorageVolume;
 import android.provider.Downloads;
 import android.text.TextUtils;
 import android.util.Log;
@@ -79,8 +77,6 @@ class StorageManager {
 
     /** misc members */
     private final Context mContext;
-    private static String sdCardStorageDir;
-    private static final String LOGTAG = "StorageManager";
 
     public StorageManager(Context context) {
         mContext = context;
@@ -88,11 +84,6 @@ class StorageManager {
         mExternalStorageDir = Environment.getExternalStorageDirectory();
         mSystemCacheDir = Environment.getDownloadCacheDirectory();
         startThreadToCleanupDatabaseAndPurgeFileSystem();
-        if (isSecondStorageSupported()) {
-            sdCardStorageDir = getExternalStorageDirectory(context);
-        } else {
-            sdCardStorageDir = null;
-        }
     }
 
     /** How often should database and filesystem be cleaned up to remove spurious files
@@ -158,9 +149,7 @@ class StorageManager {
                 dir = mSystemCacheDir;
                 break;
             case Downloads.Impl.DESTINATION_FILE_URI:
-                if (isSecondStorageSupported() && path.startsWith(sdCardStorageDir)) {
-                    dir = new File(sdCardStorageDir);
-                } else if (path.startsWith(mExternalStorageDir.getPath())) {
+                if (path.startsWith(mExternalStorageDir.getPath())) {
                     dir = mExternalStorageDir;
                 } else if (path.startsWith(mDownloadDataDir.getPath())) {
                     dir = mDownloadDataDir;
@@ -186,13 +175,11 @@ class StorageManager {
         if (targetBytes == 0) {
             return;
         }
-        if (!(isSecondStorageSupported() && root.getPath().startsWith(sdCardStorageDir))) {
-            if (destination == Downloads.Impl.DESTINATION_FILE_URI ||
-                    destination == Downloads.Impl.DESTINATION_EXTERNAL) {
-                if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-                    throw new StopRequestException(Downloads.Impl.STATUS_DEVICE_NOT_FOUND_ERROR,
-                            "external media not mounted");
-                }
+        if (destination == Downloads.Impl.DESTINATION_FILE_URI ||
+                destination == Downloads.Impl.DESTINATION_EXTERNAL) {
+            if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+                throw new StopRequestException(Downloads.Impl.STATUS_DEVICE_NOT_FOUND_ERROR,
+                        "external media not mounted");
             }
         }
         // is there enough space in the file system of the given param 'root'.
@@ -481,29 +468,5 @@ class StorageManager {
 
     private synchronized void resetBytesDownloadedSinceLastCheckOnSpace() {
         mBytesDownloadedSinceLastCheckOnSpace = 0;
-    }
-
-    /**
-     * Whether support Second Storage
-     *
-     * @return boolean true support Second Storage, false will be not
-     */
-    public static boolean isSecondStorageSupported() {
-        return true;
-    }
-
-    public static String getExternalStorageDirectory(Context context) {
-        String sdCardDir = null;
-        android.os.storage.StorageManager storageManager =
-                (android.os.storage.StorageManager) context
-                        .getSystemService(Context.STORAGE_SERVICE);
-        StorageVolume[] volumes = storageManager.getVolumeList();
-        for (int i = 0; i < volumes.length; i++) {
-            if (volumes[i].isRemovable() && volumes[i].allowMassStorage()) {
-                sdCardDir = volumes[i].getPath();
-                break;
-            }
-        }
-        return sdCardDir;
     }
 }
